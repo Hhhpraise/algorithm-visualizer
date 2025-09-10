@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab {
+            padding: 12px 24px;
+            margin: 0 5px;
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .tab-content {
+            display: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        select {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-weight: bold;
+        }
+
+        select option {
+            background: #2a5298;
+            color: white;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            width: 100px;
+        }
+
+        #canvas {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            display: block;
+            margin: 0 auto;
+        }
+
+        .info-panel {
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+
+        .grid-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1px;
+            background: #333;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .cell {
+            width: 20px;
+            height: 20px;
+            background: #2a2a2a;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .cell.wall {
+            background: #333;
+        }
+
+        .cell.start {
+            background: #4ecdc4;
+        }
+
+        .cell.end {
+            background: #ff6b6b;
+        }
+
+        .cell.visited {
+            background: #ffd93d;
+        }
+
+        .cell.path {
+            background: #6bcf7f;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab {
+                margin: 2px 0;
+            }
+
+            #canvas {
+                width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Algorithm Visualizer</h1>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('sorting')">Sorting Algorithms</button>
+            <button class="tab" onclick="showTab('pathfinding')">Pathfinding</button>
+            <button class="tab" onclick="showTab('graph')">Graph Traversal</button>
+        </div>
+
+        <!-- Sorting Tab -->
+        <div id="sorting" class="tab-content active">
+            <div class="controls">
+                <select id="sortAlgorithm">
+                    <option value="bubble">Bubble Sort</option>
+                    <option value="selection">Selection Sort</option>
+                    <option value="insertion">Insertion Sort</option>
+                    <option value="merge">Merge Sort</option>
+                    <option value="quick">Quick Sort</option>
+                    <option value="heap">Heap Sort</option>
+                </select>
+                <button onclick="generateArray()">Generate New Array</button>
+                <button id="sortBtn" onclick="startSort()">Start Sorting</button>
+                <button onclick="stopSort()">Stop</button>
+                <div class="slider-container">
+                    <label>Speed:</label>
+                    <input type="range" id="speedSlider" min="1" max="100" value="50">
+                    <span id="speedValue">50ms</span>
+                </div>
+                <div class="slider-container">
+                    <label>Size:</label>
+                    <input type="range" id="sizeSlider" min="20" max="200" value="100">
+                    <span id="sizeValue">100</span>
+                </div>
+            </div>
+            <canvas id="canvas" width="1000" height="400"></canvas>
+            <div class="info-panel">
+                <div class="stats">
+                    <div class="stat">
+                        <span class="stat-label">Comparisons</span>
+                        <span class="stat-value" id="comparisons">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Swaps</span>
+                        <span class="stat-value" id="swaps">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Time Complexity</span>
+                        <span class="stat-value" id="timeComplexity">O(n²)</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Space Complexity</span>
+                        <span class="stat-value" id="spaceComplexity">O(1)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pathfinding Tab -->
+        <div id="pathfinding" class="tab-content">
+            <div class="controls">
+                <select id="pathAlgorithm">
+                    <option value="astar">A* Search</option>
+                    <option value="dijkstra">Dijkstra's Algorithm</option>
+                    <option value="bfs">Breadth-First Search</option>
+                    <option value="dfs">Depth-First Search</option>
+                </select>
+                <button onclick="generateMaze()">Generate Maze</button>
+                <button onclick="clearPath()">Clear Path</button>
+                <button id="pathBtn" onclick="startPathfinding()">Find Path</button>
+                <button onclick="clearGrid()">Clear Grid</button>
+                <div class="slider-container">
+                    <label>Speed:</label>
+                    <input type="range" id="pathSpeedSlider" min="1" max="100" value="30">
+                    <span id="pathSpeedValue">30ms</span>
+                </div>
+            </div>
+            <div class="grid-container">
+                <div id="pathGrid" class="grid"></div>
+                <p>Click to add walls, drag to move start/end points</p>
+            </div>
+        </div>
+
+        <!-- Graph Traversal Tab -->
+        <div id="graph" class="tab-content">
+            <div class="controls">
+                <select id="graphAlgorithm">
+                    <option value="bfs">BFS Traversal</option>
+                    <option value="dfs">DFS Traversal</option>
+                    <option value="topological">Topological Sort</option>
+                </select>
+                <button onclick="generateGraph()">Generate Graph</button>
+                <button id="graphBtn" onclick="startGraphTraversal()">Start Traversal</button>
+                <button onclick="resetGraph()">Reset</button>
+                <div class="slider-container">
+                    <label>Speed:</label>
+                    <input type="range" id="graphSpeedSlider" min="1" max="100" value="50">
+                    <span id="graphSpeedValue">50ms</span>
+                </div>
+            </div>
+            <canvas id="graphCanvas" width="1000" height="500"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let array = [];
+        let isAnimating = false;
+        let animationId;
+
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const graphCanvas = document.getElementById('graphCanvas');
+        const graphCtx = graphCanvas.getContext('2d');
+
+        // Statistics
+        let comparisons = 0;
+        let swaps = 0;
+
+        // Pathfinding grid
+        const GRID_SIZE = 25;
+        let grid = [];
+        let startNode = {x: 5, y: 5};
+        let endNode = {x: 20, y: 15};
+
+        // Graph variables
+        let nodes = [];
+        let edges = [];
+        let visitedNodes = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            generateArray();
+            setupSliders();
+            initializeGrid();
+            generateGraph();
+        });
+
+        function showTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+
+            // Stop any running animations
+            stopSort();
+        }
+
+        function setupSliders() {
+            const speedSlider = document.getElementById('speedSlider');
+            const sizeSlider = document.getElementById('sizeSlider');
+            const pathSpeedSlider = document.getElementById('pathSpeedSlider');
+            const graphSpeedSlider = document.getElementById('graphSpeedSlider');
+
+            speedSlider.addEventListener('input', () => {
+                document.getElementById('speedValue').textContent = speedSlider.value + 'ms';
+            });
+
+            sizeSlider.addEventListener('input', () => {
+                document.getElementById('sizeValue').textContent = sizeSlider.value;
+                generateArray();
+            });
+
+            pathSpeedSlider.addEventListener('input', () => {
+                document.getElementById('pathSpeedValue').textContent = pathSpeedSlider.value + 'ms';
+            });
+
+            graphSpeedSlider.addEventListener('input', () => {
+                document.getElementById('graphSpeedValue').textContent = graphSpeedSlider.value + 'ms';
+            });
+        }
+
+        // ===== SORTING ALGORITHMS =====
+
+        function generateArray() {
+            const size = parseInt(document.getElementById('sizeSlider').value);
+            array = [];
+            for (let i = 0; i < size; i++) {
+                array.push(Math.floor(Math.random() * 350) + 10);
+            }
+            resetStats();
+            drawArray();
+        }
+
+        function resetStats() {
+            comparisons = 0;
+            swaps = 0;
+            document.getElementById('comparisons').textContent = '0';
+            document.getElementById('swaps').textContent = '0';
+        }
+
+        function updateComplexity(algorithm) {
+            const complexities = {
+                bubble: {time: 'O(n²)', space: 'O(1)'},
+                selection: {time: 'O(n²)', space: 'O(1)'},
+                insertion: {time: 'O(n²)', space: 'O(1)'},
+                merge: {time: 'O(n log n)', space: 'O(n)'},
+                quick: {time: 'O(n log n)', space: 'O(log n)'},
+                heap: {time: 'O(n log n)', space: 'O(1)'}
+            };
+
+            document.getElementById('timeComplexity').textContent = complexities[algorithm].time;
+            document.getElementById('spaceComplexity').textContent = complexities[algorithm].space;
+        }
+
+        function drawArray(compareIndices = [], swapIndices = []) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const barWidth = canvas.width / array.length;
+
+            for (let i = 0; i < array.length; i++) {
+                const barHeight = array[i];
+                let color = '#4ecdc4';
+
+                if (swapIndices.includes(i)) {
+                    color = '#ff6b6b';
+                } else if (compareIndices.includes(i)) {
+                    color = '#ffd93d';
+                }
+
+                ctx.fillStyle = color;
+                ctx.fillRect(i * barWidth, canvas.height - barHeight, barWidth - 2, barHeight);
+
+                // Add glow effect
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 10;
+                ctx.fillRect(i * barWidth, canvas.height - barHeight, barWidth - 2, barHeight);
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        async function startSort() {
+            if (isAnimating) return;
+
+            isAnimating = true;
+            document.getElementById('sortBtn').disabled = true;
+
+            const algorithm = document.getElementById('sortAlgorithm').value;
+            updateComplexity(algorithm);
+
+            switch (algorithm) {
+                case 'bubble': await bubbleSort(); break;
+                case 'selection': await selectionSort(); break;
+                case 'insertion': await insertionSort(); break;
+                case 'merge': await mergeSort(0, array.length - 1); break;
+                case 'quick': await quickSort(0, array.length - 1); break;
+                case 'heap': await heapSort(); break;
+            }
+
+            // Victory animation
+            await celebrateSort();
+
+            isAnimating = false;
+            document.getElementById('sortBtn').disabled = false;
+        }
+
+        function stopSort() {
+            isAnimating = false;
+            document.getElementById('sortBtn').disabled = false;
+            if (animationId) {
+                clearTimeout(animationId);
+            }
+        }
+
+        async function sleep(ms) {
+            return new Promise(resolve => {
+                animationId = setTimeout(resolve, ms);
+            });
+        }
+
+        async function bubbleSort() {
+            for (let i = 0; i < array.length - 1 && isAnimating; i++) {
+                for (let j = 0; j < array.length - i - 1 && isAnimating; j++) {
+                    comparisons++;
+                    document.getElementById('comparisons').textContent = comparisons;
+
+                    drawArray([j, j + 1]);
+                    await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+
+                    if (array[j] > array[j + 1]) {
+                        [array[j], array[j + 1]] = [array[j + 1], array[j]];
+                        swaps++;
+                        document.getElementById('swaps').textContent = swaps;
+                        drawArray([], [j, j + 1]);
+                        await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+                    }
+                }
+            }
+        }
+
+        async function selectionSort() {
+            for (let i = 0; i < array.length - 1 && isAnimating; i++) {
+                let minIdx = i;
+                for (let j = i + 1; j < array.length && isAnimating; j++) {
+                    comparisons++;
+                    document.getElementById('comparisons').textContent = comparisons;
+
+                    drawArray([i, j, minIdx]);
+                    await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+
+                    if (array[j] < array[minIdx]) {
+                        minIdx = j;
+                    }
+                }
+
+                if (minIdx !== i) {
+                    [array[i], array[minIdx]] = [array[minIdx], array[i]];
+                    swaps++;
+                    document.getElementById('swaps').textContent = swaps;
+                    drawArray([], [i, minIdx]);
+                    await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+                }
+            }
+        }
+
+        async function insertionSort() {
+            for (let i = 1; i < array.length && isAnimating; i++) {
+                let key = array[i];
+                let j = i - 1;
+
+                while (j >= 0 && array[j] > key && isAnimating) {
+                    comparisons++;
+                    document.getElementById('comparisons').textContent = comparisons;
+
+                    array[j + 1] = array[j];
+                    swaps++;
+                    document.getElementById('swaps').textContent = swaps;
+
+                    drawArray([j, j + 1]);
+                    await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+
+                    j--;
+                }
+                array[j + 1] = key;
+                drawArray([j + 1]);
+                await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+            }
+        }
+
+        async function mergeSort(left, right) {
+            if (left >= right || !isAnimating) return;
+
+            const mid = Math.floor((left + right) / 2);
+            await mergeSort(left, mid);
+            await mergeSort(mid + 1, right);
+            await merge(left, mid, right);
+        }
+
+        async function merge(left, mid, right) {
+            const leftArray = array.slice(left, mid + 1);
+            const rightArray = array.slice(mid + 1, right + 1);
+
+            let i = 0, j = 0, k = left;
+
+            while (i < leftArray.length && j < rightArray.length && isAnimating) {
+                comparisons++;
+                document.getElementById('comparisons').textContent = comparisons;
+
+                drawArray([left + i, mid + 1 + j]);
+                await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+
+                if (leftArray[i] <= rightArray[j]) {
+                    array[k] = leftArray[i];
+                    i++;
+                } else {
+                    array[k] = rightArray[j];
+                    j++;
+                }
+
+                swaps++;
+                document.getElementById('swaps').textContent = swaps;
+                drawArray([], [k]);
+                await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+                k++;
+            }
+
+            while (i < leftArray.length && isAnimating) {
+                array[k] = leftArray[i];
+                swaps++;
+                document.getElementById('swaps').textContent = swaps;
+                drawArray([], [k]);
+                await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+                i++;
+                k++;
+            }
+
+            while (j < rightArray.length && isAnimating) {
+                array[k] = rightArray[j];
+                swaps++;
+                document.getElementById('swaps').textContent = swaps;
+                drawArray([], [k]);
+                await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+                j++;
+                k++;
+            }
+        }
+
+        async function quickSort(low, high) {
+            if (low < high && isAnimating) {
+                const pi = await partition(low, high);
+                await quickSort(low, pi - 1);
+                await quickSort(pi + 1, high);
+            }
+        }
+
+        async function partition(low, high) {
+            const pivot = array[high];
+            let i = low - 1;
+
+            for (let j = low; j < high && isAnimating; j++) {
+                comparisons++;
+                document.getElementById('comparisons').textContent = comparisons;
+
+                drawArray([j, high]);
+                await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+
+                if (array[j] < pivot) {
+                    i++;
+                    [array[i], array[j]] = [array[j], array[i]];
+                    swaps++;
+                    document.getElementById('swaps').textContent = swaps;
+                    drawArray([], [i, j]);
+                    await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+                }
+            }
+
+            [array[i + 1], array[high]] = [array[high], array[i + 1]];
+            swaps++;
+            document.getElementById('swaps').textContent = swaps;
+            drawArray([], [i + 1, high]);
+            await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+
+            return i + 1;
+        }
+
+        async function heapSort() {
+            const n = array.length;
+
+            // Build heap
+            for (let i = Math.floor(n / 2) - 1; i >= 0 && isAnimating; i--) {
+                await heapify(n, i);
+            }
+
+            // Extract elements
+            for (let i = n - 1; i > 0 && isAnimating; i--) {
+                [array[0], array[i]] = [array[i], array[0]];
+                swaps++;
+                document.getElementById('swaps').textContent = swaps;
+                drawArray([], [0, i]);
+                await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+
+                await heapify(i, 0);
+            }
+        }
+
+        async function heapify(n, i) {
+            let largest = i;
+            const left = 2 * i + 1;
+            const right = 2 * i + 2;
+
+            if (left < n) {
+                comparisons++;
+                document.getElementById('comparisons').textContent = comparisons;
+                if (array[left] > array[largest]) {
+                    largest = left;
+                }
+            }
+
+            if (right < n) {
+                comparisons++;
+                document.getElementById('comparisons').textContent = comparisons;
+                if (array[right] > array[largest]) {
+                    largest = right;
+                }
+            }
+
+            if (largest !== i && isAnimating) {
+                [array[i], array[largest]] = [array[largest], array[i]];
+                swaps++;
+                document.getElementById('swaps').textContent = swaps;
+                drawArray([], [i, largest]);
+                await sleep(101 - parseInt(document.getElementById('speedSlider').value));
+
+                await heapify(n, largest);
+            }
+        }
+
+        async function celebrateSort() {
+            for (let i = 0; i < array.length && isAnimating; i++) {
+                drawArray([], [i]);
+                await sleep(20);
+            }
+            drawArray();
+        }
+
+        // ===== PATHFINDING ALGORITHMS =====
+
+        function initializeGrid() {
+            const gridElement = document.getElementById('pathGrid');
+            gridElement.innerHTML = '';
+            gridElement.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 20px)`;
+
+            grid = [];
+            for (let y = 0; y < GRID_SIZE; y++) {
+                grid[y] = [];
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+
+                    if (x === startNode.x && y === startNode.y) {
+                        cell.classList.add('start');
+                    } else if (x === endNode.x && y === endNode.y) {
+                        cell.classList.add('end');
+                    }
+
+                    cell.addEventListener('click', handleCellClick);
+                    gridElement.appendChild(cell);
+
+                    grid[y][x] = {
+                        x, y,
+                        wall: false,
+                        visited: false,
+                        distance: Infinity,
+                        heuristic: 0,
+                        parent: null,
+                        element: cell
+                    };
+                }
+            }
+        }
+
+        function handleCellClick(event) {
+            const x = parseInt(event.target.dataset.x);
+            const y = parseInt(event.target.dataset.y);
+
+            if ((x === startNode.x && y === startNode.y) || (x === endNode.x && y === endNode.y)) {
+                return;
+            }
+
+            const cell = grid[y][x];
+            cell.wall = !cell.wall;
+            event.target.classList.toggle('wall');
+        }
+
+        function generateMaze() {
+            // Clear existing maze
+            clearGrid();
+
+            // Simple maze generation - create random walls
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    if ((x === startNode.x && y === startNode.y) || (x === endNode.x && y === endNode.y)) {
+                        continue;
+                    }
+
+                    if (Math.random() < 0.3) {
+                        grid[y][x].wall = true;
+                        grid[y][x].element.classList.add('wall');
+                    }
+                }
+            }
+        }
+
+        function clearPath() {
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    const cell = grid[y][x];
+                    cell.visited = false;
+                    cell.distance = Infinity;
+                    cell.parent = null;
+                    cell.element.classList.remove('visited', 'path');
+                }
+            }
+        }
+
+        function clearGrid() {
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    const cell = grid[y][x];
+                    cell.wall = false;
+                    cell.visited = false;
+                    cell.distance = Infinity;
+                    cell.parent = null;
+                    cell.element.className = 'cell';
+
+                    if (x === startNode.x && y === startNode.y) {
+                        cell.element.classList.add('start');
+                    } else if (x === endNode.x && y === endNode.y) {
+                        cell.element.classList.add('end');
+                    }
+                }
+            }
+        }
+
+        async function startPathfinding() {
+            if (isAnimating) return;
+
+            clearPath();
+            isAnimating = true;
+            document.getElementById('pathBtn').disabled = true;
+
+            const algorithm = document.getElementById('pathAlgorithm').value;
+
+            switch (algorithm) {
+                case 'astar': await aStarSearch(); break;
+                case 'dijkstra': await dijkstraSearch(); break;
+                case 'bfs': await breadthFirstSearch(); break;
+                case 'dfs': await depthFirstSearch(); break;
+            }
+
+            isAnimating = false;
+            document.getElementById('pathBtn').disabled = false;
+        }
+
+        function getNeighbors(node) {
+            const neighbors = [];
+            const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+            for (const [dx, dy] of directions) {
+                const x = node.x + dx;
+                const y = node.y + dy;
+
+                if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE && !grid[y][x].wall) {
+                    neighbors.push(grid[y][x]);
+                }
+            }
+            return neighbors;
+        }
+
+        function heuristic(a, b) {
+            return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+        }
+
+        async function aStarSearch() {
+            const openSet = [grid[startNode.y][startNode.x]];
+            const closedSet = [];
+
+            grid[startNode.y][startNode.x].distance = 0;
+            grid[startNode.y][startNode.x].heuristic = heuristic(grid[startNode.y][startNode.x], grid[endNode.y][endNode.x]);
+
+            while (openSet.length > 0 && isAnimating) {
+                // Find node with lowest f score
+                openSet.sort((a, b) => (a.distance + a.heuristic) - (b.distance + b.heuristic));
+                const current = openSet.shift();
+                closedSet.push(current);
+
+                if (!current.visited) {
+                    current.visited = true;
+                    current.element.classList.add('visited');
+                    await sleep(101 - parseInt(document.getElementById('pathSpeedSlider').value));
+                }
+
+                if (current.x === endNode.x && current.y === endNode.y) {
+                    await reconstructPath(current);
+                    return;
+                }
+
+                const neighbors = getNeighbors(current);
+                for (const neighbor of neighbors) {
+                    if (closedSet.includes(neighbor)) continue;
+
+                    const tentativeDistance = current.distance + 1;
+
+                    if (!openSet.includes(neighbor)) {
+                        openSet.push(neighbor);
+                    } else if (tentativeDistance >= neighbor.distance) {
+                        continue;
+                    }
+
+                    neighbor.parent = current;
+                    neighbor.distance = tentativeDistance;
+                    neighbor.heuristic = heuristic(neighbor, grid[endNode.y][endNode.x]);
+                }
+            }
+        }
+
+        async function dijkstraSearch() {
+            const unvisited = [];
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    unvisited.push(grid[y][x]);
+                }
+            }
+
+            grid[startNode.y][startNode.x].distance = 0;
+
+            while (unvisited.length > 0 && isAnimating) {
+                unvisited.sort((a, b) => a.distance - b.distance);
+                const current = unvisited.shift();
+
+                if (current.distance === Infinity) break;
+
+                if (!current.visited) {
+                    current.visited = true;
+                    if (!(current.x === startNode.x && current.y === startNode.y) &&
+                        !(current.x === endNode.x && current.y === endNode.y)) {
+                        current.element.classList.add('visited');
+                    }
+                    await sleep(101 - parseInt(document.getElementById('pathSpeedSlider').value));
+                }
+
+                if (current.x === endNode.x && current.y === endNode.y) {
+                    await reconstructPath(current);
+                    return;
+                }
+
+                const neighbors = getNeighbors(current);
+                for (const neighbor of neighbors) {
+                    if (neighbor.visited) continue;
+
+                    const tentativeDistance = current.distance + 1;
+                    if (tentativeDistance < neighbor.distance) {
+                        neighbor.distance = tentativeDistance;
+                        neighbor.parent = current;
+                    }
+                }
+            }
+        }
+
+        async function breadthFirstSearch() {
+            const queue = [grid[startNode.y][startNode.x]];
+            grid[startNode.y][startNode.x].visited = true;
+
+            while (queue.length > 0 && isAnimating) {
+                const current = queue.shift();
+
+                if (!(current.x === startNode.x && current.y === startNode.y) &&
+                    !(current.x === endNode.x && current.y === endNode.y)) {
+                    current.element.classList.add('visited');
+                }
+                await sleep(101 - parseInt(document.getElementById('pathSpeedSlider').value));
+
+                if (current.x === endNode.x && current.y === endNode.y) {
+                    await reconstructPath(current);
+                    return;
+                }
+
+                const neighbors = getNeighbors(current);
+                for (const neighbor of neighbors) {
+                    if (!neighbor.visited) {
+                        neighbor.visited = true;
+                        neighbor.parent = current;
+                        queue.push(neighbor);
+                    }
+                }
+            }
+        }
+
+        async function depthFirstSearch() {
+            const stack = [grid[startNode.y][startNode.x]];
+
+            while (stack.length > 0 && isAnimating) {
+                const current = stack.pop();
+
+                if (current.visited) continue;
+                current.visited = true;
+
+                if (!(current.x === startNode.x && current.y === startNode.y) &&
+                    !(current.x === endNode.x && current.y === endNode.y)) {
+                    current.element.classList.add('visited');
+                }
+                await sleep(101 - parseInt(document.getElementById('pathSpeedSlider').value));
+
+                if (current.x === endNode.x && current.y === endNode.y) {
+                    await reconstructPath(current);
+                    return;
+                }
+
+                const neighbors = getNeighbors(current).reverse(); // Reverse for consistent behavior
+                for (const neighbor of neighbors) {
+                    if (!neighbor.visited) {
+                        neighbor.parent = current;
+                        stack.push(neighbor);
+                    }
+                }
+            }
+        }
+
+        async function reconstructPath(endNode) {
+            const path = [];
+            let current = endNode;
+
+            while (current) {
+                path.unshift(current);
+                current = current.parent;
+            }
+
+            for (const node of path) {
+                if (!(node.x === startNode.x && node.y === startNode.y) &&
+                    !(node.x === endNode.x && node.y === endNode.y)) {
+                    node.element.classList.add('path');
+                }
+                await sleep(50);
+            }
+        }
+
+        // ===== GRAPH ALGORITHMS =====
+
+        function generateGraph() {
+            nodes = [];
+            edges = [];
+            visitedNodes = [];
+
+            // Generate random nodes
+            const nodeCount = 12;
+            for (let i = 0; i < nodeCount; i++) {
+                nodes.push({
+                    id: i,
+                    x: 100 + Math.random() * (graphCanvas.width - 200),
+                    y: 100 + Math.random() * (graphCanvas.height - 200),
+                    visited: false,
+                    color: '#4ecdc4',
+                    label: String.fromCharCode(65 + i) // A, B, C, ...
+                });
+            }
+
+            // Generate random edges
+            for (let i = 0; i < nodes.length; i++) {
+                const numConnections = Math.floor(Math.random() * 3) + 1;
+                for (let j = 0; j < numConnections; j++) {
+                    const target = Math.floor(Math.random() * nodes.length);
+                    if (target !== i && !edges.some(e =>
+                        (e.from === i && e.to === target) || (e.from === target && e.to === i))) {
+                        edges.push({
+                            from: i,
+                            to: target,
+                            visited: false
+                        });
+                    }
+                }
+            }
+
+            drawGraph();
+        }
+
+        function drawGraph() {
+            graphCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+
+            // Draw edges
+            graphCtx.strokeStyle = '#666';
+            graphCtx.lineWidth = 2;
+            for (const edge of edges) {
+                const fromNode = nodes[edge.from];
+                const toNode = nodes[edge.to];
+
+                if (edge.visited) {
+                    graphCtx.strokeStyle = '#ff6b6b';
+                    graphCtx.lineWidth = 3;
+                } else {
+                    graphCtx.strokeStyle = '#666';
+                    graphCtx.lineWidth = 2;
+                }
+
+                graphCtx.beginPath();
+                graphCtx.moveTo(fromNode.x, fromNode.y);
+                graphCtx.lineTo(toNode.x, toNode.y);
+                graphCtx.stroke();
+            }
+
+            // Draw nodes
+            for (const node of nodes) {
+                // Node circle
+                graphCtx.fillStyle = node.color;
+                graphCtx.beginPath();
+                graphCtx.arc(node.x, node.y, 25, 0, 2 * Math.PI);
+                graphCtx.fill();
+
+                // Node border
+                graphCtx.strokeStyle = node.visited ? '#ff6b6b' : '#333';
+                graphCtx.lineWidth = node.visited ? 3 : 2;
+                graphCtx.stroke();
+
+                // Node label
+                graphCtx.fillStyle = '#333';
+                graphCtx.font = 'bold 16px Arial';
+                graphCtx.textAlign = 'center';
+                graphCtx.textBaseline = 'middle';
+                graphCtx.fillText(node.label, node.x, node.y);
+            }
+        }
+
+        async function startGraphTraversal() {
+            if (isAnimating) return;
+
+            resetGraph();
+            isAnimating = true;
+            document.getElementById('graphBtn').disabled = true;
+
+            const algorithm = document.getElementById('graphAlgorithm').value;
+
+            switch (algorithm) {
+                case 'bfs': await graphBFS(); break;
+                case 'dfs': await graphDFS(); break;
+                case 'topological': await topologicalSort(); break;
+            }
+
+            isAnimating = false;
+            document.getElementById('graphBtn').disabled = false;
+        }
+
+        function resetGraph() {
+            visitedNodes = [];
+            for (const node of nodes) {
+                node.visited = false;
+                node.color = '#4ecdc4';
+            }
+            for (const edge of edges) {
+                edge.visited = false;
+            }
+            drawGraph();
+        }
+
+        async function graphBFS() {
+            const queue = [0]; // Start from node A
+            nodes[0].visited = true;
+            nodes[0].color = '#ffd93d';
+            visitedNodes.push(0);
+
+            drawGraph();
+            await sleep(101 - parseInt(document.getElementById('graphSpeedSlider').value));
+
+            while (queue.length > 0 && isAnimating) {
+                const currentId = queue.shift();
+                nodes[currentId].color = '#ff6b6b';
+
+                // Find adjacent nodes
+                const adjacentEdges = edges.filter(e => e.from === currentId || e.to === currentId);
+
+                for (const edge of adjacentEdges) {
+                    const neighborId = edge.from === currentId ? edge.to : edge.from;
+                    const neighbor = nodes[neighborId];
+
+                    if (!neighbor.visited) {
+                        neighbor.visited = true;
+                        neighbor.color = '#ffd93d';
+                        edge.visited = true;
+                        visitedNodes.push(neighborId);
+                        queue.push(neighborId);
+
+                        drawGraph();
+                        await sleep(101 - parseInt(document.getElementById('graphSpeedSlider').value));
+                    }
+                }
+            }
+        }
+
+        async function graphDFS() {
+            await dfsVisit(0);
+        }
+
+        async function dfsVisit(nodeId) {
+            if (!isAnimating) return;
+
+            const node = nodes[nodeId];
+            node.visited = true;
+            node.color = '#ff6b6b';
+            visitedNodes.push(nodeId);
+
+            drawGraph();
+            await sleep(101 - parseInt(document.getElementById('graphSpeedSlider').value));
+
+            // Find adjacent nodes
+            const adjacentEdges = edges.filter(e => e.from === nodeId || e.to === nodeId);
+
+            for (const edge of adjacentEdges) {
+                const neighborId = edge.from === nodeId ? edge.to : edge.from;
+                const neighbor = nodes[neighborId];
+
+                if (!neighbor.visited) {
+                    edge.visited = true;
+                    await dfsVisit(neighborId);
+                }
+            }
+        }
+
+        async function topologicalSort() {
+            const inDegree = new Array(nodes.length).fill(0);
+            const adjList = new Array(nodes.length).fill(null).map(() => []);
+
+            // Build adjacency list and calculate in-degrees
+            for (const edge of edges) {
+                adjList[edge.from].push(edge.to);
+                inDegree[edge.to]++;
+            }
+
+            const queue = [];
+            const result = [];
+
+            // Find all nodes with no incoming edges
+            for (let i = 0; i < nodes.length; i++) {
+                if (inDegree[i] === 0) {
+                    queue.push(i);
+                }
+            }
+
+            while (queue.length > 0 && isAnimating) {
+                const current = queue.shift();
+                result.push(current);
+
+                nodes[current].visited = true;
+                nodes[current].color = '#ff6b6b';
+
+                drawGraph();
+                await sleep(101 - parseInt(document.getElementById('graphSpeedSlider').value));
+
+                // Update in-degrees of adjacent nodes
+                for (const neighbor of adjList[current]) {
+                    inDegree[neighbor]--;
+                    if (inDegree[neighbor] === 0) {
+                        queue.push(neighbor);
+                    }
+
+                    // Mark edge as visited
+                    const edge = edges.find(e => e.from === current && e.to === neighbor);
+                    if (edge) edge.visited = true;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
